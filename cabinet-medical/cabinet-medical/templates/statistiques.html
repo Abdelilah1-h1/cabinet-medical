@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}Statistiques - Cabinet Médical{% endblock %}
+
+{% block content %}
+<!-- En-tête -->
+<div class="stats-header mb-5">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <h1 class="display-5 fw-bold mb-2">
+                <i class="bi bi-graph-up"></i> {{ titre }}
+            </h1>
+            <p class="text-muted mb-0">
+                Analyse et visualisation des données
+            </p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+            {% if current_user.role == 'medecin' %}
+                <a href="{{ url_for('medecin_dashboard') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            {% else %}
+                <a href="{{ url_for('secretaire_dashboard') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-primary">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 class="kpi-value">{{ total_rdv }}</h3>
+                <p class="kpi-label">Total RDV</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-success">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 class="kpi-value">{{ rdv_termines }}</h3>
+                <p class="kpi-label">RDV Terminés</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-info">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 class="kpi-value">{{ rdv_confirmes + rdv_planifies }}</h3>
+                <p class="kpi-label">À venir</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-warning">
+                <i class="bi bi-percent"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 class="kpi-value">{{ taux_presence }}%</h3>
+                <p class="kpi-label">Taux de présence</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques -->
+<div class="row g-4 mb-5">
+    <!-- Évolution mensuelle -->
+    <div class="col-lg-8">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up-arrow"></i> Évolution des RDV (6 derniers mois)
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <canvas id="monthlyChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Répartition par statut -->
+    <div class="col-lg-4">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart"></i> Répartition par statut
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques supplémentaires -->
+<div class="row g-4 mb-5">
+    {% if current_user.role == 'secretaire' %}
+    <!-- RDV par médecin -->
+    <div class="col-lg-6">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> RDV par médecin
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <canvas id="doctorChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Top 5 patients -->
+    <div class="col-lg-6">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-trophy"></i> Top 5 patients les plus fidèles
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                {% if top_patients_data %}
+                <div class="top-patients-list">
+                    {% for patient in top_patients_data %}
+                    <div class="top-patient-item">
+                        <div class="patient-rank">{{ loop.index }}</div>
+                        <div class="patient-info">
+                            <strong>{{ patient.nom }}</strong>
+                        </div>
+                        <div class="patient-count">
+                            <span class="badge bg-primary">{{ patient.count }} RDV</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center">Aucune donnée disponible</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Résumé statistique -->
+<div class="card shadow-lg border-0">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-clipboard-data"></i> Résumé détaillé
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="summary-item">
+                    <div class="summary-value text-info">{{ rdv_planifies }}</div>
+                    <div class="summary-label">RDV Planifiés</div>
+                    <div class="summary-bar">
+                        <div class="summary-bar-fill bg-info" style="width: {{ (rdv_planifies / total_rdv * 100) if total_rdv > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="summary-item">
+                    <div class="summary-value text-success">{{ rdv_confirmes }}</div>
+                    <div class="summary-label">RDV Confirmés</div>
+                    <div class="summary-bar">
+                        <div class="summary-bar-fill bg-success" style="width: {{ (rdv_confirmes / total_rdv * 100) if total_rdv > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="summary-item">
+                    <div class="summary-value text-secondary">{{ rdv_termines }}</div>
+                    <div class="summary-label">RDV Terminés</div>
+                    <div class="summary-bar">
+                        <div class="summary-bar-fill bg-secondary" style="width: {{ (rdv_termines / total_rdv * 100) if total_rdv > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="summary-item">
+                    <div class="summary-value text-danger">{{ rdv_annules }}</div>
+                    <div class="summary-label">RDV Annulés</div>
+                    <div class="summary-bar">
+                        <div class="summary-bar-fill bg-danger" style="width: {{ (rdv_annules / total_rdv * 100) if total_rdv > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS additionnel -->
+<style>
+.stats-header {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    padding: 2rem;
+    border-radius: var(--radius-xl);
+    border: 2px solid #bae6fd;
+}
+
+.kpi-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-xl);
+}
+
+.kpi-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kpi-icon i {
+    font-size: 2rem;
+    color: white;
+}
+
+.kpi-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.kpi-label {
+    font-size: 0.9rem;
+    color: var(--gray-600);
+    font-weight: 600;
+    margin-bottom: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.top-patients-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.top-patient-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--gray-50);
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+}
+
+.top-patient-item:hover {
+    background: var(--gray-100);
+    transform: translateX(5px);
+}
+
+.patient-rank {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.patient-info {
+    flex-grow: 1;
+}
+
+.patient-count {
+    flex-shrink: 0;
+}
+
+.summary-item {
+    text-align: center;
+}
+
+.summary-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.summary-label {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.summary-bar {
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.summary-bar-fill {
+    height: 100%;
+    transition: width 1s ease;
+}
+</style>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Graphiques -->
+<script>
+// Graphique évolution mensuelle
+const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+        labels: {{ mois_labels|tojson }},
+        datasets: [{
+            label: 'Nombre de RDV',
+            data: {{ mois_data|tojson }},
+            borderColor: '#0284c7',
+            backgroundColor: 'rgba(2, 132, 199, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointBackgroundColor: '#0284c7',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 7
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        }
+    }
+});
+
+// Graphique répartition par statut
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ statut_labels|tojson }},
+        datasets: [{
+            data: {{ statut_data|tojson }},
+            backgroundColor: {{ statut_colors|tojson }},
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    font: {
+                        size: 12,
+                        weight: '600'
+                    }
+                }
+            }
+        }
+    }
+});
+
+{% if current_user.role == 'secretaire' %}
+// Graphique RDV par médecin
+const doctorCtx = document.getElementById('doctorChart').getContext('2d');
+new Chart(doctorCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ medecin_labels|tojson }},
+        datasets: [{
+            label: 'Nombre de RDV',
+            data: {{ medecin_data|tojson }},
+            backgroundColor: '#10b981',
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5 col-md-8">
+        
+        <!-- Titre visible -->
+        <div class="text-center mb-4">
+            <div class="login-icon mx-auto mb-3">
+                <i class="bi bi-person-circle"></i>
+            </div>
+            <h2 class="fw-bold text-dark mb-2">Je suis...</h2>
+        </div>
+        
+        <!-- Choix de rôle -->
+        <div class="role-selector mb-4">
+            <button type="button" class="role-card" data-role="patient">
+                <div class="role-icon">👤</div>
+                <div class="role-title">Patient</div>
+            </button>
+            
+            <button type="button" class="role-card role-card-active" data-role="medecin">
+                <div class="role-icon">👨‍⚕️</div>
+                <div class="role-title">Médecin</div>
+            </button>
+            
+            <button type="button" class="role-card" data-role="secretaire">
+                <div class="role-icon">👩‍💼</div>
+                <div class="role-title">Secrétaire</div>
+            </button>
+        </div>
+        
+        <!-- Formulaire -->
+        <div class="card shadow-lg border-0">
+            <div class="card-body p-5">
+                <form method="POST" action="{{ url_for('login') }}">
+                    
+                    <div class="mb-4">
+                        <label for="email" class="form-label text-dark fw-semibold">
+                            <i class="bi bi-envelope"></i> EMAIL
+                        </label>
+                        <input type="email" 
+                               class="form-control form-control-lg clean-input" 
+                               id="email" 
+                               name="email" 
+                               placeholder="votre.email@example.com"
+                               required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label text-dark fw-semibold">
+                            <i class="bi bi-lock"></i> MOT DE PASSE
+                        </label>
+                        <input type="password" 
+                               class="form-control form-control-lg clean-input" 
+                               id="password" 
+                               name="password" 
+                               placeholder="••••••••"
+                               required>
+                    </div>
+                    
+                    <div class="d-grid gap-3">
+                        <button type="submit" class="btn-clean btn-clean-primary">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Se connecter
+                        </button>
+                        
+                        <a href="{{ url_for('register') }}" class="btn-clean btn-clean-secondary">
+                            <i class="bi bi-person-plus"></i>
+                            Créer un compte
+                        </a>
+                        
+                        <a href="{{ url_for('index') }}" class="btn-clean btn-clean-outline">
+                            <i class="bi bi-arrow-left"></i>
+                            Retour à l'accueil
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<style>
+.login-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.3);
+}
+
+.login-icon i {
+    font-size: 3rem;
+    color: white;
+}
+
+/* Sélecteur de rôle */
+.role-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.role-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.role-card:focus,
+.role-card:active {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.role-card:hover {
+    border-color: #0ea5e9;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(14, 165, 233, 0.2) !important;
+}
+
+.role-card-active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: #10b981;
+}
+
+.role-card-active .role-icon,
+.role-card-active .role-title {
+    filter: brightness(0) invert(1);
+}
+
+.role-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.role-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Inputs propres SANS carrés */
+.clean-input {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.875rem 1.25rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.clean-input:focus,
+.clean-input:active {
+    border-color: #0ea5e9;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1) !important;
+}
+
+/* Boutons propres SANS carrés */
+.btn-clean {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.btn-clean:focus,
+.btn-clean:active {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.btn-clean-primary {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: white;
+}
+
+.btn-clean-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3) !important;
+    color: white;
+}
+
+.btn-clean-secondary {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.btn-clean-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3) !important;
+    color: white;
+}
+
+.btn-clean-outline {
+    background: white;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-clean-outline:hover {
+    border-color: #0ea5e9;
+    color: #0ea5e9;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+/* Texte bien visible */
+.text-dark {
+    color: #0f172a !important;
+}
+</style>
+
+<script>
+// Sélection de rôle
+document.querySelectorAll('.role-card').forEach(card => {
+    card.addEventListener('click', function() {
+        document.querySelectorAll('.role-card').forEach(c => c.classList.remove('role-card-active'));
+        this.classList.add('role-card-active');
+    });
+});
+</script>
+{% endblock %}

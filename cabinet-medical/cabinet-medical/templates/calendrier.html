@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Calendrier - Cabinet Médical{% endblock %}
+
+{% block content %}
+<!-- En-tête -->
+<div class="calendar-header mb-5">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <h1 class="display-5 fw-bold mb-2">
+                <i class="bi bi-calendar-week"></i> {{ titre }}
+            </h1>
+            <p class="text-muted mb-0">
+                Vue calendrier de tous les rendez-vous
+            </p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+            {% if current_user.role == 'medecin' %}
+                <a href="{{ url_for('medecin_dashboard') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            {% else %}
+                <a href="{{ url_for('secretaire_dashboard') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Légende des couleurs -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-4 align-items-center">
+            <span class="text-muted fw-semibold me-2">Légende :</span>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #3b82f6;"></span>
+                <span class="legend-label">Planifié</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #10b981;"></span>
+                <span class="legend-label">Confirmé</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #6b7280;"></span>
+                <span class="legend-label">Terminé</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #ef4444;"></span>
+                <span class="legend-label">Annulé</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calendrier -->
+<div class="card shadow-lg border-0">
+    <div class="card-body p-4">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<!-- Modal détails RDV -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-info-circle"></i> Détails du rendez-vous
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <div class="detail-icon bg-primary-subtle">
+                                <i class="bi bi-person text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="detail-label">Patient</div>
+                                <div class="detail-value" id="modal-patient"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <div class="detail-icon bg-success-subtle">
+                                <i class="bi bi-person-badge text-success"></i>
+                            </div>
+                            <div>
+                                <div class="detail-label">Médecin</div>
+                                <div class="detail-value" id="modal-medecin"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <div class="detail-icon bg-info-subtle">
+                                <i class="bi bi-telephone text-info"></i>
+                            </div>
+                            <div>
+                                <div class="detail-label">Téléphone</div>
+                                <div class="detail-value" id="modal-telephone"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="detail-item">
+                            <div class="detail-icon bg-warning-subtle">
+                                <i class="bi bi-envelope text-warning"></i>
+                            </div>
+                            <div>
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value" id="modal-email"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="detail-item">
+                            <div class="detail-icon" style="background: #fef3c7;">
+                                <i class="bi bi-chat-left-text" style="color: #f59e0b;"></i>
+                            </div>
+                            <div>
+                                <div class="detail-label">Motif</div>
+                                <div class="detail-value" id="modal-motif"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="detail-item">
+                            <div class="detail-icon" style="background: #e0e7ff;">
+                                <i class="bi bi-clipboard-check" style="color: #6366f1;"></i>
+                            </div>
+                            <div>
+                                <div class="detail-label">Statut</div>
+                                <div class="detail-value">
+                                    <span class="badge" id="modal-statut"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                {% if current_user.role == 'secretaire' %}
+                <a href="#" id="modal-edit-btn" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Modifier
+                </a>
+                {% endif %}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+
+<!-- CSS additionnel -->
+<style>
+.calendar-header {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    padding: 2rem;
+    border-radius: var(--radius-xl);
+    border: 2px solid #bae6fd;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.legend-label {
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+/* FullCalendar personnalisé */
+#calendar {
+    font-family: 'Inter', sans-serif;
+}
+
+.fc-event {
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.fc-event:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.fc-toolbar-title {
+    font-size: 1.75rem !important;
+    font-weight: 800 !important;
+    color: var(--gray-900) !important;
+}
+
+.fc-button {
+    background: var(--primary) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.fc-button:hover {
+    background: var(--primary-dark) !important;
+    transform: translateY(-2px);
+}
+
+.fc-button-active {
+    background: var(--primary-dark) !important;
+}
+
+.fc-daygrid-day-number {
+    font-weight: 700;
+    color: var(--gray-700);
+}
+
+.fc-day-today {
+    background: rgba(2, 132, 199, 0.1) !important;
+}
+
+.fc-col-header-cell {
+    background: var(--gray-50);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+}
+
+/* Modal */
+.detail-item {
+    display: flex;
+    gap: 1rem;
+    align-items: start;
+}
+
+.detail-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.detail-icon i {
+    font-size: 1.5rem;
+}
+
+.detail-label {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.detail-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.bg-primary-subtle {
+    background: #dbeafe !important;
+}
+
+.bg-success-subtle {
+    background: #d1fae5 !important;
+}
+
+.bg-info-subtle {
+    background: #e0f2fe !important;
+}
+
+.bg-warning-subtle {
+    background: #fef3c7 !important;
+}
+</style>
+
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
+<!-- Script d'initialisation -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    
+    // Événements depuis le serveur
+    var events = {{ events|tojson }};
+    
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'fr',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        buttonText: {
+            today: "Aujourd'hui",
+            month: 'Mois',
+            week: 'Semaine',
+            day: 'Jour'
+        },
+        events: events,
+        eventClick: function(info) {
+            // Remplir le modal avec les données
+            const props = info.event.extendedProps;
+            
+            document.getElementById('modal-patient').textContent = props.patient;
+            document.getElementById('modal-medecin').textContent = props.medecin;
+            document.getElementById('modal-telephone').textContent = props.telephone;
+            document.getElementById('modal-email').textContent = props.email;
+            document.getElementById('modal-motif').textContent = props.motif;
+            
+            // Statut avec badge coloré
+            const statutBadge = document.getElementById('modal-statut');
+            let badgeClass = '';
+            let statutText = '';
+            
+            switch(props.statut) {
+                case 'planifie':
+                    badgeClass = 'bg-info';
+                    statutText = 'Planifié';
+                    break;
+                case 'confirme':
+                    badgeClass = 'bg-success';
+                    statutText = 'Confirmé';
+                    break;
+                case 'termine':
+                    badgeClass = 'bg-secondary';
+                    statutText = 'Terminé';
+                    break;
+                case 'annule':
+                    badgeClass = 'bg-danger';
+                    statutText = 'Annulé';
+                    break;
+            }
+            
+            statutBadge.className = 'badge ' + badgeClass;
+            statutBadge.textContent = statutText;
+            
+            // Lien de modification pour secrétaires
+            {% if current_user.role == 'secretaire' %}
+            document.getElementById('modal-edit-btn').href = '/secretaire/modifier_rdv/' + info.event.id;
+            {% endif %}
+            
+            // Afficher le modal
+            var modal = new bootstrap.Modal(document.getElementById('eventModal'));
+            modal.show();
+        },
+        height: 'auto',
+        aspectRatio: 1.8,
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            meridiem: false
+        }
+    });
+    
+    calendar.render();
+});
+</script>
+{% endblock %}
