@@ -5,6 +5,7 @@ from datetime import datetime, date, timedelta
 from functools import wraps
 from config import Config
 from models import db, User, Patient, Medecin, Secretaire, RendezVous, Notification
+import os
 
 # Initialisation de l'application
 app = Flask(__name__)
@@ -786,4 +787,5 @@ def statistiques():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host='0.0.0.0', port=port)
